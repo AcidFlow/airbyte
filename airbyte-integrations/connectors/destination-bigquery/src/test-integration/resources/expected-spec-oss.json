@@ -109,9 +109,22 @@
               "title" : "GCS Bucket Path",
               "examples" : [ "data_sync/test" ],
               "order" : 2
+            },
+            "max_bad_records" : {
+              "type" : "integer",
+              "description" : "The maximum number of bad records that BigQuery can ignore when running a load job.",
+              "title" : "Max bad records per load query",
+              "order" : 4
+            },
+            "gcs_bucket_path_bad_records" : {
+              "type" : "string",
+              "default" : "airbyte/bad_records",
+              "title" : "GCS Path for files containing bad Records",
+              "examples" : [ "airbyte/bad_records" ],
+              "order" : 5
             }
           },
-          "required" : [ "method", "credential", "gcs_bucket_name", "gcs_bucket_path" ]
+          "required" : [ "method", "credential", "gcs_bucket_name", "gcs_bucket_path", "max_bad_records", "gcs_bucket_path_bad_records" ]
         } ],
         "description" : "The way data will be uploaded to BigQuery.",
         "title" : "Loading Method",

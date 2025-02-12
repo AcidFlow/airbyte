@@ -25,10 +25,14 @@ import io.airbyte.integrations.destination.bigquery.spec.BigqueryConfiguration
 import io.airbyte.integrations.destination.bigquery.spec.GcsFilePostProcessing
 import io.airbyte.integrations.destination.bigquery.spec.GcsStagingConfiguration
 import io.airbyte.integrations.destination.bigquery.write.typing_deduping.toTableId
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.micronaut.context.annotation.Requires
 import io.micronaut.context.condition.Condition
 import io.micronaut.context.condition.ConditionContext
 import jakarta.inject.Singleton
+import kotlin.math.max
+
+private val logger = KotlinLogging.logger {}
 
 class BigQueryBulkLoader(
     private val storageClient: GcsClient,
@@ -46,7 +50,7 @@ class BigQueryBulkLoader(
                 .setAllowQuotedNewLines(true) // safe for long JSON strings
                 .setAllowJaggedRows(true)
                 .build()
-
+        val maxBadRecords = (bigQueryConfiguration.loadingMethod as GcsStagingConfiguration).maxBadRecords
         val configuration =
             LoadJobConfiguration.builder(tableId, gcsUri)
                 .setFormatOptions(csvOptions)
@@ -54,12 +58,26 @@ class BigQueryBulkLoader(
                 .setWriteDisposition(JobInfo.WriteDisposition.WRITE_APPEND)
                 .setJobTimeoutMs(600000L) // 10 min timeout
                 .setNullMarker(BigQueryConsts.NULL_MARKER)
+                .setMaxBadRecords(maxBadRecords)
                 .build()
 
         val loadJob = bigQueryClient.create(JobInfo.of(configuration))
 
         try {
             BigQueryUtils.waitForJobFinish(loadJob)
+
+            // Jobs are immutables, so we need to reload it to get the statistics
+            val completedJob = loadJob.reload()
+            val badRecords = completedJob.getStatistics<JobStatistics.LoadStatistics>().badRecords
+            if (badRecords != null && badRecords > 0) {
+                logger.warn {
+                    "[${loadJob.jobId}] Bad records found when loading data into $tableId " +
+                        "from $gcsUri: $badRecords bad records, tolerated max bad records: " +
+                        "$maxBadRecords"
+                }
+                val badRecordsKey = "gs://${remoteObject.storageConfig.gcsBucketName}/${bigQueryConfiguration.loadingMethod.gcsBucketPathBadRecords}/${remoteObject.key}"
+                storageClient.move(remoteObject, badRecordsKey)
+            }
         } catch (e: Exception) {
             throw RuntimeException(
                 "Failed to load CSV data from $gcsUri to table ${tableId.dataset}.${tableId.table}",

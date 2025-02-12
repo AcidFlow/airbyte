@@ -148,6 +148,19 @@ class GcsStagingSpecification :
     override val path: String = ""
     override val credential: GcsAuthSpecification =
         GcsHmacKeySpecification(accessKeyId = "", secretAccessKey = "")
+
+    @get:JsonProperty("max_bad_records")
+    @get:JsonSchemaTitle("Max bad records per load query")
+    @get:JsonPropertyDescription(
+        """The maximum number of bad records that BigQuery can ignore when running a load job."""
+    )
+    @get:JsonSchemaInject(json = """{"order": 4}""")
+    val maxBadRecords: Int = 0
+
+    @get:JsonProperty("gcs_bucket_path_bad_records", defaultValue = "airbyte/bad_records")
+    @get:JsonSchemaTitle("GCS Path for files containing bad Records")
+    @get:JsonSchemaInject(json = """{"examples": ["airbyte/bad_records"], "order": 5}""")
+    val pathBadRecords: String = ""
 }
 
 // bigquery supports a subset of GCS regions.

@@ -33,6 +33,8 @@ data object BatchedStandardInsertConfiguration : LoadingMethodConfiguration
 data class GcsStagingConfiguration(
     val gcsClientConfig: GcsClientConfiguration,
     val filePostProcessing: GcsFilePostProcessing,
+    val maxBadRecords: Int,
+    val gcsBucketPathBadRecords: String,
 ) : LoadingMethodConfiguration
 
 @Singleton
@@ -46,6 +48,8 @@ class BigqueryConfigurationFactory :
                     GcsStagingConfiguration(
                         GcsClientConfiguration(gcsStagingSpec, pojo.datasetLocation.gcsRegion),
                         gcsStagingSpec.filePostProcessing ?: GcsFilePostProcessing.DELETE,
+                        gcsStagingSpec.maxBadRecords,
+                        gcsStagingSpec.pathBadRecords
                     )
                 }
                 is BatchedStandardInsertSpecification,
