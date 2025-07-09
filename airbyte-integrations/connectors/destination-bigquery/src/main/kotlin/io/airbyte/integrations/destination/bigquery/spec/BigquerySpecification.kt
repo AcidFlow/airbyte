@@ -149,7 +149,7 @@ class GcsStagingSpecification :
     override val credential: GcsAuthSpecification =
         GcsHmacKeySpecification(accessKeyId = "", secretAccessKey = "")
 
-    @get:JsonProperty("max_bad_records")
+    @get:JsonProperty("max_bad_records", defaultValue = "0")
     @get:JsonSchemaTitle("Max bad records per load query")
     @get:JsonPropertyDescription(
         """The maximum number of bad records that BigQuery can ignore when running a load job."""

@@ -112,6 +112,7 @@
             },
             "max_bad_records" : {
               "type" : "integer",
+              "default" : 0,
               "description" : "The maximum number of bad records that BigQuery can ignore when running a load job.",
               "title" : "Max bad records per load query",
               "order" : 4
