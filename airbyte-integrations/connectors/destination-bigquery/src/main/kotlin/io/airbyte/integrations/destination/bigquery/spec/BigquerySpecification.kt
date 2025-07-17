@@ -157,9 +157,14 @@ class GcsStagingSpecification :
     @get:JsonSchemaInject(json = """{"order": 4}""")
     val maxBadRecords: Int = 0
 
+    @get:JsonProperty("keep_bad_records", defaultValue = "false")
+    @get:JsonSchemaTitle("Copy data with bad records to another GCS location.")
+    @get:JsonSchemaInject(json = """{"default": false, "order": 5}""")
+    val shouldKeepBadRecords: Boolean = false
+
     @get:JsonProperty("gcs_bucket_path_bad_records", defaultValue = "airbyte/bad_records")
-    @get:JsonSchemaTitle("GCS Path for files containing bad Records")
-    @get:JsonSchemaInject(json = """{"examples": ["airbyte/bad_records"], "order": 5}""")
+    @get:JsonSchemaTitle("GCS path prefix for files containing bad Records")
+    @get:JsonSchemaInject(json = """{"examples": ["airbyte/bad_records"], "order": 6}""")
     val pathBadRecords: String = ""
 }
 

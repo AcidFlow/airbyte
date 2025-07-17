@@ -34,6 +34,7 @@ data class GcsStagingConfiguration(
     val gcsClientConfig: GcsClientConfiguration,
     val filePostProcessing: GcsFilePostProcessing,
     val maxBadRecords: Int,
+    val shouldKeepBadRecords: Boolean,
     val gcsBucketPathBadRecords: String,
 ) : LoadingMethodConfiguration
 
@@ -49,6 +50,7 @@ class BigqueryConfigurationFactory :
                         GcsClientConfiguration(gcsStagingSpec, pojo.datasetLocation.gcsRegion),
                         gcsStagingSpec.filePostProcessing ?: GcsFilePostProcessing.DELETE,
                         gcsStagingSpec.maxBadRecords,
+                        gcsStagingSpec.shouldKeepBadRecords,
                         gcsStagingSpec.pathBadRecords
                     )
                 }

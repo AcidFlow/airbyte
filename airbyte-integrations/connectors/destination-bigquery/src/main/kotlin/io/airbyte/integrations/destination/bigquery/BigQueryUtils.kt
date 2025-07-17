@@ -133,6 +133,7 @@ object BigQueryUtils {
                 .put(BigQueryConsts.GCS_BUCKET_PATH, loadingMethod[BigQueryConsts.GCS_BUCKET_PATH])
                 .put(BigQueryConsts.GCS_BUCKET_REGION, getDatasetLocation(config))
                 .put(BigQueryConsts.GCS_LOAD_MAX_BAD_RECORDS, loadingMethod[BigQueryConsts.GCS_LOAD_MAX_BAD_RECORDS])
+                .put(BigQueryConsts.GCS_KEEP_BAD_RECORDS, loadingMethod[BigQueryConsts.GCS_KEEP_BAD_RECORDS])
                 .put(BigQueryConsts.GCS_BUCKET_PATH_BAD_RECORDS, loadingMethod[BigQueryConsts.GCS_BUCKET_PATH_BAD_RECORDS])
                 .put(BigQueryConsts.CREDENTIAL, loadingMethod[BigQueryConsts.CREDENTIAL])
                 .put(

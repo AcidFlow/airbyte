@@ -4,10 +4,13 @@
 
 package io.airbyte.integrations.destination.bigquery.write.bulk_loader
 
-import com.google.cloud.bigquery.*
 import com.google.cloud.bigquery.BigQuery
+import com.google.cloud.bigquery.CsvOptions
 import com.google.cloud.bigquery.JobInfo
+import com.google.cloud.bigquery.JobStatistics
 import com.google.cloud.bigquery.LoadJobConfiguration
+import com.google.cloud.bigquery.Schema
+import com.google.cloud.bigquery.TableId
 import io.airbyte.cdk.load.command.DestinationCatalog
 import io.airbyte.cdk.load.file.gcs.GcsBlob
 import io.airbyte.cdk.load.file.gcs.GcsClient
@@ -30,7 +33,6 @@ import io.micronaut.context.annotation.Requires
 import io.micronaut.context.condition.Condition
 import io.micronaut.context.condition.ConditionContext
 import jakarta.inject.Singleton
-import kotlin.math.max
 
 private val logger = KotlinLogging.logger {}
 
@@ -51,6 +53,7 @@ class BigQueryBulkLoader(
                 .setAllowJaggedRows(true)
                 .build()
         val maxBadRecords = (bigQueryConfiguration.loadingMethod as GcsStagingConfiguration).maxBadRecords
+        val shouldKeepBadRecords = (bigQueryConfiguration.loadingMethod).shouldKeepBadRecords
         val configuration =
             LoadJobConfiguration.builder(tableId, gcsUri)
                 .setFormatOptions(csvOptions)
@@ -75,8 +78,11 @@ class BigQueryBulkLoader(
                         "from $gcsUri: $badRecords bad records, tolerated max bad records: " +
                         "$maxBadRecords"
                 }
-                val badRecordsKey = "gs://${remoteObject.storageConfig.gcsBucketName}/${bigQueryConfiguration.loadingMethod.gcsBucketPathBadRecords}/${remoteObject.key}"
-                storageClient.move(remoteObject, badRecordsKey)
+
+                if (shouldKeepBadRecords) {
+                    val badRecordsKey = "${bigQueryConfiguration.loadingMethod.gcsBucketPathBadRecords}/${remoteObject.key}"
+                    copyBadRecords(remoteObject.key, badRecordsKey)
+                }
             }
         } catch (e: Exception) {
             throw RuntimeException(
@@ -94,6 +100,21 @@ class BigQueryBulkLoader(
 
     override fun close() {
         /* Do nothing */
+    }
+
+    private suspend fun copyBadRecords(srcKey: String, destKey: String) {
+        try {
+            val fileContent = storageClient.get(srcKey) { ins -> ins.readAllBytes() }
+                if (fileContent == null) {
+                    logger.warn { "No content found in $srcKey, skipping bad records upload." }
+                    return
+                }
+                storageClient.put(destKey, fileContent)
+        } catch (e: Exception) {
+            logger.warn(e) { "Error while trying to copy bad records from $srcKey, to $destKey skipping bad records upload." }
+            return
+        }
+        logger.info { "Copied bad records from $srcKey to $destKey" }
     }
 }
 
